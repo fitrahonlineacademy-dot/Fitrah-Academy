@@ -17,5 +17,81 @@
 <footer class="footer"><div class="wrap"><div class="footgrid"><div><a class="brand" href="#home"><span class="mark">F</span><span><strong style="color:#f8f0dc">FITRAH ACADEMY</strong><small style="color:#bdc9bd">KNOWLEDGE · CHARACTER · FUTURE</small></span></a><p>Building Faith · Inspiring Knowledge · Shaping Character. Personalized educational support for families in The Gambia.</p></div><div><h4>Explore</h4><div class="footlinks"><a href="#about">About Us</a><a href="#services">Our Services</a><a href="#subjects">Subjects</a><a href="#how">How It Works</a></div></div><div><h4>Contact</h4><div class="footlinks"><a href="https://wa.me/2206707436" target="_blank" rel="noopener">WhatsApp: +220 670 7436</a><a href="#register">Register Your Child</a><span>The Gambia</span></div></div></div><div class="copy"><span>© <span id="year"></span> FITRAH ACADEMY. All rights reserved.</span><span>Faith · Knowledge · Character</span></div></div></footer><div class="mobilecta"><a class="btn gold" href="#register">Register Your Child ↗</a></div>
 <script>
 const menu=document.getElementById('menu'),links=document.getElementById('links');menu.addEventListener('click',()=>{let o=links.classList.toggle('open');menu.setAttribute('aria-expanded',String(o));menu.textContent=o?'Close ✕':'Menu ☰'});links.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{links.classList.remove('open');menu.setAttribute('aria-expanded','false');menu.textContent='Menu ☰'}));document.getElementById('year').textContent=new Date().getFullYear();document.querySelectorAll('[data-service]').forEach(a=>a.addEventListener('click',()=>{let x=document.querySelector('input[name="service"][value="'+a.dataset.service+'"]');if(x)x.checked=true}));
-document.getElementById('form').addEventListener('submit',e=>{e.preventDefault();let f=e.currentTarget,n=document.getElementById('notice'),subjects=[...f.querySelectorAll('[name="subject"]:checked')].map(x=>x.value),days=[...f.querySelectorAll('[name="day"]:checked')].map(x=>x.value),service=f.querySelector('[name="service"]:checked');if(!subjects.length){n.textContent='Please select at least one subject.';n.classList.add('show');return}if(!service){n.textContent='Please select a preferred service.';n.classList.add('show');return}if((service.value.includes('Home')||service.value==='Both')&&!f.area.value.trim()){n.textContent='Please enter your area or neighborhood for home-based teaching.';n.classList.add('show');f.area.focus();return}let d=new FormData(f),msg=['Assalamu Alaikum. I would like to enquire about registering my child with FITRAH ACADEMY.','','PARENT / GUARDIAN','Name: '+d.get('parent'),'Phone: '+d.get('phone'),'Email: '+(d.get('email')||'Not provided'),'','CHILD','Name: '+d.get('child'),'Age: '+d.get('age'),'Current level: '+(d.get('level')||'Not provided'),'','LEARNING PREFERENCES','Service: '+service.value,'Subjects: '+subjects.join(', '),'Classes per week: '+d.get('freq'),'Preferred time: '+d.get('time'),'Preferred days: '+(days.join(', ')||'Flexible'),'Area: '+(d.get('area')||'Not applicable'),'Additional notes: '+(d.get('comments')||'None'),'','I understand this is an enquiry. Placement, schedule, availability, and fees must be confirmed by the academy.'].join('\n');n.textContent='WhatsApp will open with your enquiry. Please review the details and press Send in WhatsApp. The request is not submitted until you send it.';n.classList.add('show');window.open('https://wa.me/2206707436?text='+encodeURIComponent(msg),'_blank','noopener')});
+
+document.getElementById('form').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const f = e.currentTarget;
+  const n = document.getElementById('notice');
+  const btn = f.querySelector('button[type="submit"]');
+
+  const subjects = [...f.querySelectorAll('[name="subject"]:checked')].map(x => x.value);
+  const days = [...f.querySelectorAll('[name="day"]:checked')].map(x => x.value);
+  const service = f.querySelector('[name="service"]:checked');
+
+  n.classList.add('show');
+
+  if (!subjects.length) {
+    n.textContent = 'Please select at least one subject.';
+    return;
+  }
+
+  if (!service) {
+    n.textContent = 'Please select a preferred service.';
+    return;
+  }
+
+  if ((service.value.includes('Home') || service.value === 'Both') && !f.area.value.trim()) {
+    n.textContent = 'Please enter your area or neighborhood.';
+    f.area.focus();
+    return;
+  }
+
+  const d = new FormData(f);
+
+  const registration = {
+    parent_name: d.get('parent'),
+    phone: d.get('phone'),
+    email: d.get('email') || null,
+    child_name: d.get('child'),
+    child_age: d.get('age'),
+    current_level: d.get('level') || null,
+    preferred_service: service.value,
+    subjects,
+    classes_per_week: d.get('freq'),
+    preferred_time: d.get('time'),
+    preferred_days: days,
+    area: d.get('area') || null,
+    additional_notes: d.get('comments') || null,
+    consent: document.getElementById('consent').checked
+  };
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting enquiry...';
+  n.textContent = 'Please wait while we submit your enquiry securely.';
+
+  try {
+    const response = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(registration)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Submission failed.');
+    }
+
+    n.textContent = 'Thank you! Your enquiry has been received. Your reference number is ' + result.reference + '. Fitrah Academy will contact you soon.';
+    f.reset();
+    btn.textContent = 'Enquiry submitted ✓';
+
+  } catch (error) {
+    n.textContent = 'We could not submit your enquiry right now. Please contact Fitrah Academy on WhatsApp: +220 670 7436.';
+    btn.disabled = false;
+    btn.textContent = 'Try again';
+  }
+});
+
 </script></body></html>
