@@ -122,9 +122,9 @@ module.exports = async function handler(req, res) {
     );
 
     if (!response.ok) {
-      throw new Error("Database submission failed.");
-    }
-
+  const errorDetails = await response.text();
+  throw new Error(`Supabase returned ${response.status}: ${errorDetails}`);
+}
     return res.status(200).json({
       success: true,
       reference
